@@ -1,0 +1,48 @@
+global
+        log 127.0.0.1   local0
+        log 127.0.0.1   local1 notice
+        #log loghost    local0 info
+        maxconn 4096
+        #debug
+        #quiet
+        user haproxy
+        group haproxy
+
+defaults
+        log     global
+        mode    http
+        option  httplog
+        option  dontlognull
+        retries 3
+        redispatch
+        maxconn 2000
+        contimeout      5000
+        clitimeout      50000
+        srvtimeout      50000
+
+<% node[:haproxy][:backends].each do |o| %>
+backend <%= o[:name] %>
+  mode <%= o[:mode] %>
+  balance roundrobin
+  <% o[:servers].each do |oo| %>
+  server <%= oo[:name] %> <%= oo[:host] %>:<%= oo[:port] %><%= oo[:path] %> weight <%= oo[:weight] %> maxconn <%= oo[:maxconn] %>
+  <% end %>
+
+<% end %>
+
+<% node[:haproxy][:frontends].each do |o| %>
+frontend <%= o[:name] %>
+  bind <%= o[:bind] %>
+  <% if o[:options] %>
+  <% o[:options].each do |opt| %>
+  option <%= opt %>
+  <%end%>
+  <%end%>
+  <% o[:acls].each do |oo| %>
+  acl <%= oo[:name] %> <%= oo[:acl] %>
+  <% end %>
+  <% o[:use_backends].each do |oo| %>
+  use_backend <%= oo[:name] %> <%= oo[:options] %>
+  <% end %>
+<% end %>
+

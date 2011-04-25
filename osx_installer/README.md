@@ -24,13 +24,11 @@ This resource will install an OSX Installer Package:  http://en.wikipedia.org/wi
 
 * `name` - This is the filename of the pkg.
 * `destination` - The 'target' of the install.  Maps to the -target option of the installer.  From the man page, it can be:
-        (1) One of the domains returned by -dominfo.
-        (2) Device node entry.  Any entry of the form of /dev/disk*.
-              ex: /dev/disk2
-        (3) The disk identifier.  Any entry of the form of disk*.  ex: disk1s9
-        (4) Volume mount point.  Any entry of the form of /Volumes/Mountpoint.
-              ex: /Volumes/Untitled
-        (5) Volume UUID.  ex: 376C4046-083E-334F-AF08-62FAFBC4E352
+        * One of the domains returned by -dominfo.
+        * Device node entry.  Any entry of the form of /dev/disk*.  ex: /dev/disk2
+        * The disk identifier.  Any entry of the form of disk*.  ex: disk1s9
+        * Volume mount point.  Any entry of the form of /Volumes/Mountpoint.   ex: /Volumes/Untitled
+        * Volume UUID.  ex: 376C4046-083E-334F-AF08-62FAFBC4E352
   This defaults to '/'
 * `source` - This can be a URL of a package, which will be downloaded to your file_cache_path
 * `verbose` - Verbose output from `installer`.
@@ -42,12 +40,14 @@ Usage Examples
 ==============
 
 Install R for OS X from the download site:
+
     osx_installer_package 'R-2.13.0.pkg' do
       source 'http://cran.r-project.org/bin/macosx/R-2.13.0.pkg'
       action :install
     end
 
 Verbosely install a pkg you have downloaded to a specified search path:
+
     osx_installer_package 'Silverlight.pkg' do
       verbose true
       search_paths ['/Users/nat/Downloads/']
@@ -57,3 +57,4 @@ Verbosely install a pkg you have downloaded to a specified search path:
 To do
 =====
 * Allow source attribute to be a local filepath(?)
+

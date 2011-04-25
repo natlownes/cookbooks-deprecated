@@ -1,41 +1,51 @@
 require 'uri'
 #
+
 # Cookbook Name:: osx_installer
 # Provider:: package
 
 def load_current_resource
-  @osx_installer = Chef::Resource::OsxInstallerPackage.new(new_resource.name)
-  @osx_installer.filename(new_resource.name)
-  @osx_installer.is_remote(true) if URI.parse(new_resource.source).scheme
-  @osx_installer.verbose(new_resource.verbose)
+  new_resource.filename(new_resource.name) unless new_resource.filename
+  new_resource.is_remote(true) if URI.parse(new_resource.source).scheme
 end
 
 action :install do
-  if @osx_installer.is_remote
-    remote_file new_resource.source do
-      Chef::Log.debug("fetching:  #{new_resource.source}")
+  if new_resource.is_remote
+    add_cache_path_to_search_paths!
+    remote_file "#{Chef::Config[:file_cache_path]}/#{new_resource.filename}" do
+      Chef::Log.debug("#{self.class.name} fetching:  #{new_resource.source}")
       source new_resource.source
     end
   end
+
+  Chef::Log.debug("#{self.class.name} search_paths: #{new_resource.search_paths.inspect}")
 
   osx_pkg_filepaths = []
   new_resource.search_paths.each do |search_path|
     search_path = ::File.expand_path(search_path)
     Dir["#{search_path}/**/*#{new_resource.package_extension}"].each do |path|
-      if ::File.basename(path) == @osx_installer.filename
-        Chef::Log.debug("Found osx_installer: #{path}")
+      if ::File.basename(path) == new_resource.filename
+        Chef::Log.debug("#{self.class.name} found: #{path}")
         osx_pkg_filepaths << ::File.expand_path(path)
       end
     end
   end
 
-  Chef::Log.debug("no osx_installer found...continuing...") if osx_pkg_filepaths.empty?
+  Chef::Log.debug("#{self.class.name} pkg NOT found...continuing...") if osx_pkg_filepaths.empty?
 
   osx_pkg_filepaths.each do |package_path|
-    Chef::Log.debug("Installing osx_installer: #{package_path}")
-    installer_command = "installer -pkg '#{package_path}' -target '#{@osx_installer.destination}'"
-    installer_command << " -verbose" if @osx_installer.verbose
+    Chef::Log.debug("#{self.class.name} installing: #{package_path}")
+    Chef::Log.debug("#{self.class.name} install destination: #{new_resource.destination}")
+
+    installer_command = "installer -pkg '#{package_path}' -target '#{new_resource.destination}'"
+    installer_command << " -verbose" if new_resource.verbose
     execute installer_command
+  end
+end
+
+def add_cache_path_to_search_paths!
+  unless new_resource.search_paths.include?(Chef::Config[:file_cache_path])
+    new_resource.search_paths << Chef::Config[:file_cache_path]
   end
 end
 
